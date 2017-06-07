@@ -12,6 +12,10 @@
     "elo",
     "codechef"
   ],
+  "engine": {
+    "node": "*",
+    "npm": "*"
+  },
   "author": "vsp4 <vikramsinghpanwar4atgmaildotcom>",
   "license": "ISC",
   "dependencies": {
