@@ -1,0 +1,49 @@
+<html>
+	<head>
+		<title>Rating Predictions - <%= contest %></title>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+	</head>
+
+	<body>
+		<div class="container">
+			<div class="row" style="margin-top:15px;">
+					<div class="col-8">
+	    			<h1>Rating Predictions for <a href="https://www.codechef.com/<%= contest %>"><%= contest %></a> - <%= typename %></h1>
+					</div>
+					<div class="col-4">
+	    			<span>Codechef Rating Predictor - <a href="https://github.com/vsp4/codechef-rating-predictor">Github</a></span> <br/>
+	    			<span>Last updated: <%= elapsed %></span>
+					</div>
+			</div>
+
+			<div class="table table-responsive">
+				<table class="table table-striped table-bordered">
+					<thead class="thead-inverse">
+						<tr>
+							<th>#</th>
+							<th>Username</th>
+							<th>Rank</th>
+							<th>Previous Rating</th>
+							<th>New Rating</th>
+							<th>Rating Change</th>
+						</tr>
+					</thead>
+					
+					<tbody>
+						<% result.forEach((user) => { %>
+						<tr>
+							<td><%= user.rank %></th>
+							<td><%= user.user %></td>
+							<td><%= user.rank %></td>
+							<td><%= user.previous %></td>
+							<td><%= user.rating %></td>
+							<th><%= user.change %></td>
+						</tr>
+						<% }) %>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</body>
+</html>
