@@ -78,6 +78,9 @@ MongoClient.connect(mongourl, function(err, db)
 					}
 
 					var typename = req.params.type[0].toUpperCase() + req.params.type.slice(1);
+
+					console.log(dateobj.date);
+					
 					res.render('rating', {elapsed: elapsedTime(dateobj.date), contest: req.params.contestid, type: req.params.type, typename: typename, result: result});
 				});
 			}

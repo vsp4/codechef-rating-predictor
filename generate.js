@@ -18,6 +18,10 @@ var contestid;
 var usercollection;
 var datacollection;
 var lastupdatecollection;
+var cachecollection;
+
+/*
+old
 
 function getCachedResponseUser(user, func)
 {
@@ -70,6 +74,56 @@ function getCachedResponseUser(user, func)
 		}, 4);
 	}
 }
+*/
+
+function getCachedResponseUser(user, func)
+{
+	cachecollection.findOne({contest: contestid, user: user}, function(err, res)
+	{
+		if (res)
+		{
+			var jsonobj = res.data;
+			func(jsonobj);
+		}
+		else
+		{
+			var url = util.format('https://www.codechef.com/users/%s', user);
+			execHttps(url, function(source)
+			{
+				if (source.indexOf("date_versus_rating_all") == -1)
+				{
+					//bad response
+					getCachedResponseUser(user, func);
+					return;
+				}
+					
+				var jsonobj = {};
+				
+				for (var i in parseTypes)
+				{
+					var search = "var " + parseTypes[i] + " = ";
+					var index = source.indexOf(search);
+					
+					if (index != -1)
+					{
+						index += search.length;
+						var endindex = source.indexOf(";", index);
+						jsonobj[parseTypes[i]] = JSON.parse(source.substring(index, endindex));
+					}
+					else
+					{
+						jsonobj[parseTypes[i]] = {};
+					}
+				}
+
+				cachecollection.update({contest: contestid, user: user}, {contest: contestid, user: user, data: jsonobj}, {upsert: true}, function()
+				{
+					func(jsonobj);
+				})
+			}, 4);
+		}
+	});
+}
 
 function getVolatility(userdata, callback)
 {
@@ -89,7 +143,8 @@ function getVolatility(userdata, callback)
 			for (var j in obj[parseTypes[i]])
 			{
 				var currContest = obj[parseTypes[i]][j];
-				if (currContest.code == userdata.contestid)
+
+				if (currContest.code == contestid)
 				{
 					currentRatingObj[parseTypes[i]] = parseInt(currContest.rating);
 					break;
@@ -143,11 +198,11 @@ function getVolatility(userdata, callback)
 	});
 }
 
-function generateVolatility(contestid, callback)
+function generateVolatility(callback)
 {
 	usercollection.find({contestid: contestid}).toArray(function(err, data)
 	{
-		async.eachLimit(data, 10, getVolatility, function(err)
+		async.eachLimit(data, 50, getVolatility, function(err)
 		{
 			if (err)
 			{
@@ -307,7 +362,7 @@ function calculateRating(callback)
 
 		datacollection.deleteMany({contest: contestid, type: readabletype}, function(err)
 		{
-			console.log("Delted previous records for ", contestid, readabletype);
+			console.log("Deleted previous records for ", contestid, readabletype);
 			datacollection.insertMany(dataInsertions, function(err)
 			{
 				console.log("Inserted new records for ", contestid, readabletype);
@@ -317,8 +372,10 @@ function calculateRating(callback)
 	}, 
 	function(err)
 	{
-		lastupdatecollection.update({contest: contestid}, {contest: contestid, date: new Date()}, {upsert: true});
-		callback();
+		lastupdatecollection.update({contest: contestid}, {contest: contestid, date: new Date()}, {upsert: true}, function()
+		{
+			callback();
+		});
 	});
 }
 
@@ -344,14 +401,17 @@ module.exports = function()
 			throw err;
 		}
 
+		/*
 		if (!fs.existsSync(cacheDir))
 		{
 			fs.mkdirSync(cacheDir);
 		}
+		*/
 
 		usercollection = db.collection("user");
 		datacollection = db.collection("data");
 		lastupdatecollection = db.collection("lastupdate");
+		cachecollection = db.collection("cache");
 
 		var processContests = function()
 		{
@@ -362,15 +422,17 @@ module.exports = function()
 				lastRank = 0;
 				contestid = ciid;
 
+				/*
 				if (!fs.existsSync(path.join(cacheDir, contestid)))
 				{
 					fs.mkdirSync(path.join(cacheDir, contestid));
 				}
+				*/
 
 				generateRanklist(contestid, 1, function()
 				{
 					lastRank = Object.keys(rankData).length + 1;
-					generateVolatility(contestid, function()
+					generateVolatility(function()
 					{
 						calculateRating(function()
 						{
