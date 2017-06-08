@@ -76,69 +76,76 @@ function parseStatusPage(contestid, problemid, pageno, callback)
 
 require("./helper.js")();
 
-var contestIDS = [];
-
-MongoClient.connect(mongourl, function(err, db)
+module.exports = function(nextcall)
 {
-	if (err)
+	
+	var contestIDS = [];
+
+	MongoClient.connect(mongourl, function(err, db)
 	{
-		 throw err;
-	}
-
-	collection = db.collection("status");
-	usercollection = db.collection("user");	
-
-	usercollection.createIndex({contestid: 1, user: 1}, {unique: true });
-
-	/*
-	bad way
-	if (process.argv.length >= 4 && process.argv[3] == 'delete')
-	{
-		//reset before use
-		usercollection.deleteMany({});
-		collection.deleteMany({});
-	}
-	*/
-
-	var processContests = function()
-	{
-		async.eachLimit(contestIDS, 1, function(ciid, callback)
+		if (err)
 		{
-			contestid = ciid;
-			
-			parseUserContest(contestid, function(problem, callback)
+			throw err;
+		}
+
+		collection = db.collection("status");
+		usercollection = db.collection("user");	
+
+		usercollection.createIndex({contestid: 1, user: 1}, {unique: true });
+
+		/*
+		bad way
+		if (process.argv.length >= 4 && process.argv[3] == 'delete')
+		{
+			//reset before use
+			usercollection.deleteMany({});
+			collection.deleteMany({});
+		}
+		*/
+
+		var processContests = function()
+		{
+			async.eachLimit(contestIDS, 1, function(ciid, callback)
 			{
-				var problemid = problem.code;
-				collection.findOne({problemid: problemid}, function(err, obj)
+				contestid = ciid;
+				
+				parseUserContest(contestid, function(problem, callback)
 				{
-					var lastpage = (obj !== null ? obj.pagedone : 0);
-					console.log(problemid, lastpage);
-					parseStatusPage(contestid, problemid, lastpage, callback);
+					var problemid = problem.code;
+					collection.findOne({problemid: problemid}, function(err, obj)
+					{
+						var lastpage = (obj !== null ? obj.pagedone : 0);
+						console.log(problemid, lastpage);
+						parseStatusPage(contestid, problemid, lastpage, callback);
+					});
+				},
+				function()
+				{
+					console.log("Completed parsing", contestid);
+					callback();
 				});
 			},
-			function()
+			function (err)
 			{
-				console.log("Completed parsing", contestid);
-				callback();
+				if (err)
+					console.log("Error", err);
+
+				db.close();
+				console.log("Completed ALL");
+
+				nextcall();
 			});
-		},
-		function (err)
+		};
+
+		db.collection("checklist").find({}).toArray(function(err, cdatas)
 		{
-			if (err)
-				console.log("Error", err);
+			cdatas.forEach(function(x)
+			{
+				contestIDS.push(x.contest);
+			});
 
-			db.close();
-			console.log("Completed ALL");
+			processContests();
 		});
-	};
-
-	db.collection("checklist").find({}).toArray(function(err, cdatas)
-	{
-		cdatas.forEach(function(x)
-		{
-			contestIDS.push(x.contest);
-		});
-
-		processContests();
 	});
-});
+
+};

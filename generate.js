@@ -324,78 +324,81 @@ function calculateRating(callback)
 
 require("./helper.js")();
 
-var contestIDS = [];
-
-/*
-//input from command line
-for (var i = 2; i < process.argv.length; i++)
+module.exports = function()
 {
-	contestIDS.push(process.argv[i]);
-}
-*/
+	
+	var contestIDS = [];
 
-MongoClient.connect(mongourl, function(err, db)
-{
-	if (err)
+	/*
+	//input from command line
+	for (var i = 2; i < process.argv.length; i++)
 	{
-		 throw err;
+		contestIDS.push(process.argv[i]);
 	}
+	*/
 
-	if (!fs.existsSync(cacheDir))
+	MongoClient.connect(mongourl, function(err, db)
 	{
-		fs.mkdirSync(cacheDir);
-	}
-
-	usercollection = db.collection("user");
-	datacollection = db.collection("data");
-	lastupdatecollection = db.collection("lastupdate");
-
-	var processContests = function()
-	{
-		async.eachLimit(contestIDS, 1, function(ciid, callback)
+		if (err)
 		{
-			rankData = {};
-			originalData = {};
-			lastRank = 0;
-			contestid = ciid;
+			throw err;
+		}
 
-			if (!fs.existsSync(path.join(cacheDir, contestid)))
-			{
-				fs.mkdirSync(path.join(cacheDir, contestid));
-			}
+		if (!fs.existsSync(cacheDir))
+		{
+			fs.mkdirSync(cacheDir);
+		}
 
-			generateRanklist(contestid, 1, function()
+		usercollection = db.collection("user");
+		datacollection = db.collection("data");
+		lastupdatecollection = db.collection("lastupdate");
+
+		var processContests = function()
+		{
+			async.eachLimit(contestIDS, 1, function(ciid, callback)
 			{
-				lastRank = Object.keys(rankData).length + 1;
-				generateVolatility(contestid, function()
+				rankData = {};
+				originalData = {};
+				lastRank = 0;
+				contestid = ciid;
+
+				if (!fs.existsSync(path.join(cacheDir, contestid)))
 				{
-					calculateRating(function()
+					fs.mkdirSync(path.join(cacheDir, contestid));
+				}
+
+				generateRanklist(contestid, 1, function()
+				{
+					lastRank = Object.keys(rankData).length + 1;
+					generateVolatility(contestid, function()
 					{
-						console.log("Completed", contestid);
-						callback();
+						calculateRating(function()
+						{
+							console.log("Completed", contestid);
+							callback();
+						});
 					});
 				});
+			},
+			function (err)
+			{
+				if (err)
+					console.log("Error", err);
+
+				db.close();
+				console.log("Completed ALL");
 			});
-		},
-		function (err)
-		{
-			if (err)
-				console.log("Error", err);
+		};
 
-			db.close();
-			console.log("Completed ALL");
-		});
-	};
-
-	db.collection("checklist").find({}).toArray(function(err, cdatas)
-	{
-		cdatas.forEach(function(x)
+		db.collection("checklist").find({}).toArray(function(err, cdatas)
 		{
-			contestIDS.push(x.contest);
+			cdatas.forEach(function(x)
+			{
+				contestIDS.push(x.contest);
+			});
+
+			processContests();
 		});
 
-		processContests();
 	});
-
-});
-
+};

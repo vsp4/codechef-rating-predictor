@@ -55,8 +55,12 @@ MongoClient.connect(mongourl, function(err, db)
 	var datacollection = db.collection("data");
 	var lastupdatecollection = db.collection("lastupdate");
 
+	var processor = require("./process.js");
+
 	app.get('/contest/:contestid/:type', function(req, res)
 	{
+		processor();
+
 		lastupdatecollection.findOne({contest: req.params.contestid}, function (err, dateobj)
 		{
 			if (err)
@@ -85,7 +89,9 @@ MongoClient.connect(mongourl, function(err, db)
 		});
 	});
 
-	app.use(function(req, res) {
+	app.use(function(req, res)
+	{
+		processor();
 		res.status(500);
 		res.render("error", {message: "Invalid link!"});
 	});
@@ -93,4 +99,7 @@ MongoClient.connect(mongourl, function(err, db)
 	app.listen(8080);
 
 	console.log('Listening on http://127.0.0.1:8080');
+	
+	processor();
+	
 });
