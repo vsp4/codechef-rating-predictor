@@ -13,7 +13,7 @@
     "codechef"
   ],
   "engine": {
-    "node": "*",
+    "node": "4.2.*",
     "npm": "*"
   },
   "author": "vsp4 <vikramsinghpanwar4atgmaildotcom>",
