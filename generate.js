@@ -26,7 +26,8 @@ function getCachedResponseUser(user, func)
 
 	try
 	{
-		func(JSON.parse(fs.readFileSync(filepath).toString()));
+		var jsonobj = JSON.parse(fs.readFileSync(filepath).toString());
+		func(jsonobj);
 	}
 	catch (ex)
 	{
@@ -64,7 +65,7 @@ function getCachedResponseUser(user, func)
 				if (err)
 					console.dir("ERROR: ", err);
 			});
-			
+
 			func(jsonobj);
 		}, 4);
 	}
@@ -78,7 +79,7 @@ function getVolatility(userdata, callback)
 		var timesObj = {};
 		var lastAllRatingObj = {};
 		var currentRatingObj = {};
-		
+
 		for (var i in parseTypes)
 		{
 			var timesPlayed = 0;
@@ -135,8 +136,10 @@ function getVolatility(userdata, callback)
 			console.log("ERROR: Rating mismatch!!", userdata.user, rankData[userdata.user], lastAllRatingObj["date_versus_rating_all"], obj);
 		}
 		*/
+
+		console.log("Volatility generated for ", userdata.user);
 		
-		callback();
+		setImmediate(callback);
 	});
 }
 
@@ -196,13 +199,12 @@ function generateRanklist(contestid, pageno, func)
 	}, 4);
 }
 
-function calculateRating()
+function calculateRating(callback)
 {
 	var N = Object.keys(rankData).length;
 
-	for (var tid in parseTypes)
+	async.each(parseTypes, function(type, cbnext)
 	{
-		var type = parseTypes[tid];
 		var readabletype = type.replace("date_versus_rating_", "");
 
 		var countRank = new Array(lastRank+1).fill(0);
@@ -225,6 +227,8 @@ function calculateRating()
 		});
 
 		var Cf = Math.sqrt(VASquaresum/N + ratingDiffSquare/(N-1));
+
+		var dataInsertions = [];
 
 		Object.keys(rankData).forEach(function(user)
 		{
@@ -259,7 +263,7 @@ function calculateRating()
 
 			var maxChange = 100 + 75/(curr.times[type] + 1) + (100*500)/(Math.abs(Ra - 1500) + 500);
 
-			NRa = Math.ceil(NRa);
+			//NRa = Math.ceil(NRa);
 
 			if (Math.abs(NRa - Ra) > maxChange)
 			{
@@ -273,27 +277,49 @@ function calculateRating()
 				}
 			}
 
-			var qdata = {
+			NRa = Math.ceil(NRa);
+
+			if (isNaN(NRa))
+			{
+				console.log(N, curr.rank, add);
+			}
+
+			var data = {
 				contest: contestid,
 				type: readabletype,
 				user: user
 			};
-
-			var data = qdata;
 			data.rank = curr.rank;
 			data.previous = curr.rating[type];
-			data.rating = Math.ceil(NRa);
+			data.rating = NRa;
 
-			datacollection.update(qdata, data, {upsert: true});
+			dataInsertions.push(data);
 
 			if (originalData[user][type] != undefined)
 			{
 				console.log(user, curr.rating[type], Math.ceil(NRa), originalData[user][type], Math.abs(originalData[user][type] - Math.ceil(NRa)));
 			}
+			else
+			{
+				console.log(user, curr.rank, maxChange, NRa, Ra, tempPerf, RWa);
+			}
 		});
 
-		lastupdatecollection.update({contest: contestid}, {contest: contestid, date: new Date()}, {upsert: true})
-	}
+		datacollection.deleteMany({contest: contestid, type: readabletype}, function(err)
+		{
+			console.log("Delted previous records for ", contestid, readabletype);
+			datacollection.insertMany(dataInsertions, function(err)
+			{
+				console.log("Inserted new records for ", contestid, readabletype);
+				cbnext();
+			});
+		});
+	}, 
+	function(err)
+	{
+		lastupdatecollection.update({contest: contestid}, {contest: contestid, date: new Date()}, {upsert: true});
+		callback();
+	});
 }
 
 require("./helper.js")();
@@ -343,9 +369,11 @@ MongoClient.connect(mongourl, function(err, db)
 				lastRank = Object.keys(rankData).length + 1;
 				generateVolatility(contestid, function()
 				{
-					calculateRating();
-					console.log("Completed", contestid);
-					callback();
+					calculateRating(function()
+					{
+						console.log("Completed", contestid);
+						callback();
+					});
 				});
 			});
 		},

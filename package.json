@@ -13,11 +13,11 @@
     "codechef"
   ],
   "engine": {
-    "node": "4.2.*",
+    "node": "4.*",
     "npm": "*"
   },
   "author": "vsp4 <vikramsinghpanwar4atgmaildotcom>",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "async": "^2.4.1",
     "cheerio": "^0.22.0",
