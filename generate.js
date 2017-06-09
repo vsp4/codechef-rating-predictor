@@ -272,7 +272,7 @@ function calculateRating(callback)
 
 		var readabletype = type.replace("date_versus_rating_", "");
 
-		var countRank = new Array(lastRank+5).fill(0);
+		var countRank = new Array(N+5).fill(0);
 		var VASquaresum = 0;
 		var ratingSum = 0;
 
@@ -345,7 +345,7 @@ function calculateRating(callback)
 
 			if (isNaN(NRa))
 			{
-				console.log(N, curr.rank, add, maxChange, Ra, tempPerf, Cf, RWa);
+				console.log(N, curr.rank, add, maxChange, Ra, tempPerf, Cf, RWa, countRank[curr.rank]);
 			}
 
 			var data = {
@@ -379,10 +379,11 @@ function calculateRating(callback)
 				datacollection.insertMany(dataInsertions, function(err)
 				{
 					console.log("Inserted new records for ", contestid, readabletype);
-			var aftermeasure = new Date();
 
-			time += aftermeasure - beforemeasure;
-			console.log(beforemeasure, aftermeasure);
+					var aftermeasure = new Date();
+
+					time += aftermeasure - beforemeasure;
+					console.log(beforemeasure.toString(), aftermeasure.toString());
 
 					setImmediate(cbnext);
 				});
