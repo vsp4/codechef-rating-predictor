@@ -16,7 +16,7 @@ function parseUserContest(code, funcproblem, callback)
 	{
 		if (source.indexOf('"status":"success"') == -1)
 		{
-			parseUserContest(code, func);
+			parseUserContest(code, funcproblem, callback);
 			return;
 		}
 
@@ -105,7 +105,7 @@ module.exports = function(nextcall)
 
 		var processContests = function()
 		{
-			async.eachLimit(contestIDS, 1, function(ciid, callback)
+			async.eachSeries(contestIDS, function(ciid, callback)
 			{
 				contestid = ciid;
 				
@@ -133,7 +133,7 @@ module.exports = function(nextcall)
 				db.close();
 				console.log("Completed ALL");
 
-				nextcall();
+				setImmediate(nextcall);
 			});
 		};
 

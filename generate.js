@@ -125,6 +125,8 @@ function getCachedResponseUser(user, func)
 	});
 }
 
+var time = 0;
+
 function getVolatility(userdata, callback)
 {
 	getCachedResponseUser(userdata.user, function(obj)
@@ -176,7 +178,7 @@ function getVolatility(userdata, callback)
 		
 		if (!(userdata.user in rankData))
 		{
-			rankData[userdata.user] = {rank: lastRank};
+			rankData[userdata.user] = {rank: lastRank, handle: userdata.user};
 		}
 
 		rankData[userdata.user].rating = lastAllRatingObj;
@@ -192,7 +194,7 @@ function getVolatility(userdata, callback)
 		}
 		*/
 
-		console.log("Volatility generated for ", userdata.user);
+		//console.log("Volatility generated for ", userdata.user);
 		
 		setImmediate(callback);
 	});
@@ -202,7 +204,9 @@ function generateVolatility(callback)
 {
 	usercollection.find({contestid: contestid}).toArray(function(err, data)
 	{
-		async.eachLimit(data, 50, getVolatility, function(err)
+		console.log("Generating volatility", new Date().toString());
+
+		async.eachLimit(data, 5, getVolatility, function(err)
 		{
 			if (err)
 			{
@@ -229,7 +233,7 @@ function generateRanklist(contestid, pageno, func)
 		
 		obj.list.forEach(function(data)
 		{
-			rankData[data.user_handle] = {rank: data.rank, rating: data.rating};
+			rankData[data.user_handle] = {rank: data.rank, handle: data.user_handle};
 
 			try
 			{
@@ -258,11 +262,17 @@ function calculateRating(callback)
 {
 	var N = Object.keys(rankData).length;
 
+	console.log("Calculating rating", new Date().toString());
+
 	async.each(parseTypes, function(type, cbnext)
 	{
+		var beforemeasure = new Date();
+
+		console.log("Calculating rating", contestid, type, new Date().toString());
+
 		var readabletype = type.replace("date_versus_rating_", "");
 
-		var countRank = new Array(lastRank+1).fill(0);
+		var countRank = new Array(lastRank+5).fill(0);
 		var VASquaresum = 0;
 		var ratingSum = 0;
 
@@ -270,7 +280,7 @@ function calculateRating(callback)
 		{
 			countRank[rankData[key].rank]++;
 			VASquaresum += rankData[key].volatility[type]*rankData[key].volatility[type];
-			ratingSum += parseInt(rankData[key].rating[type]);
+			ratingSum += rankData[key].rating[type];
 		});
 
 		var Ravg = ratingSum/N;
@@ -285,10 +295,9 @@ function calculateRating(callback)
 
 		var dataInsertions = [];
 
-		Object.keys(rankData).forEach(function(user)
+		async.eachLimit(rankData, 5, function(curr, nextcalculatecallback)
 		{
-			var curr = rankData[user];
-			var Ra = parseInt(curr.rating[type]);
+			var Ra = curr.rating[type];
 			var RWa = (0.4*curr.times[type] + 0.2)/(0.7*curr.times[type] + 0.6);
 			var Va = curr.volatility[type];
 			
@@ -305,7 +314,7 @@ function calculateRating(callback)
 
 			Object.keys(rankData).forEach(function(key)
 			{
-				var Rb = parseInt(rankData[key].rating[type]);
+				var Rb = rankData[key].rating[type];
 				var Vb = rankData[key].volatility[type];
 				EPerf += 1/(1 + Math.pow(4, (Ra - Rb)/Math.sqrt(Va*Va + Vb*Vb)));
 			});
@@ -336,13 +345,13 @@ function calculateRating(callback)
 
 			if (isNaN(NRa))
 			{
-				console.log(N, curr.rank, add);
+				console.log(N, curr.rank, add, maxChange, Ra, tempPerf, Cf, RWa);
 			}
 
 			var data = {
 				contest: contestid,
 				type: readabletype,
-				user: user
+				user: curr.handle
 			};
 			data.rank = curr.rank;
 			data.previous = curr.rating[type];
@@ -350,6 +359,8 @@ function calculateRating(callback)
 
 			dataInsertions.push(data);
 
+			setImmediate(nextcalculatecallback);
+			/*
 			if (originalData[user][type] != undefined)
 			{
 				console.log(user, curr.rating[type], Math.ceil(NRa), originalData[user][type], Math.abs(originalData[user][type] - Math.ceil(NRa)));
@@ -358,15 +369,23 @@ function calculateRating(callback)
 			{
 				console.log(user, curr.rank, maxChange, NRa, Ra, tempPerf, RWa);
 			}
-		});
-
-		datacollection.deleteMany({contest: contestid, type: readabletype}, function(err)
+			*/
+		},
+		function(err)
 		{
-			console.log("Deleted previous records for ", contestid, readabletype);
-			datacollection.insertMany(dataInsertions, function(err)
+			datacollection.deleteMany({contest: contestid, type: readabletype}, function(err)
 			{
-				console.log("Inserted new records for ", contestid, readabletype);
-				cbnext();
+				console.log("Deleted previous records for ", contestid, readabletype);
+				datacollection.insertMany(dataInsertions, function(err)
+				{
+					console.log("Inserted new records for ", contestid, readabletype);
+			var aftermeasure = new Date();
+
+			time += aftermeasure - beforemeasure;
+			console.log(beforemeasure, aftermeasure);
+
+					setImmediate(cbnext);
+				});
 			});
 		});
 	}, 
@@ -374,26 +393,15 @@ function calculateRating(callback)
 	{
 		lastupdatecollection.update({contest: contestid}, {contest: contestid, date: new Date()}, {upsert: true}, function()
 		{
-			callback();
+			setImmediate(callback);
 		});
 	});
 }
 
 require("./helper.js")();
 
-module.exports = function()
+module.exports = function(nextcall)
 {
-	
-	var contestIDS = [];
-
-	/*
-	//input from command line
-	for (var i = 2; i < process.argv.length; i++)
-	{
-		contestIDS.push(process.argv[i]);
-	}
-	*/
-
 	MongoClient.connect(mongourl, function(err, db)
 	{
 		if (err)
@@ -413,14 +421,19 @@ module.exports = function()
 		lastupdatecollection = db.collection("lastupdate");
 		cachecollection = db.collection("cache");
 
+		var contestLists = [];
+
 		var processContests = function()
 		{
-			async.eachLimit(contestIDS, 1, function(ciid, callback)
+			time = 0;
+
+			async.eachSeries(contestLists, function(ciid, callback)
 			{
 				rankData = {};
 				originalData = {};
 				lastRank = 0;
-				contestid = ciid;
+				contestid = ciid.contest;
+				parseTypes = ciid.parse;
 
 				/*
 				if (!fs.existsSync(path.join(cacheDir, contestid)))
@@ -448,7 +461,9 @@ module.exports = function()
 					console.log("Error", err);
 
 				db.close();
-				console.log("Completed ALL");
+				console.log("Completed ALL", time);
+
+				setImmediate(nextcall);
 			});
 		};
 
@@ -456,7 +471,7 @@ module.exports = function()
 		{
 			cdatas.forEach(function(x)
 			{
-				contestIDS.push(x.contest);
+				contestLists.push(x);
 			});
 
 			processContests();

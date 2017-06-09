@@ -1,11 +1,17 @@
 var fs = require("fs");
 var processLogFile = 'process.txt';
 
+var isWorking = false;
+
 module.exports = function ()
 {
     var processnow = false;
 
-    if (fs.existsSync(processLogFile))
+    if (isWorking)
+    {
+        processnow = false;
+    }
+    else if (fs.existsSync(processLogFile))
     {
         var contents = fs.readFileSync(processLogFile, 'utf8');
         var dt = new Date(contents);
@@ -36,6 +42,14 @@ module.exports = function ()
         var status = require("./status.js");
         var generator = require("./generate.js");
 
-        status(generator);
+        isWorking = true;
+
+        status(function()
+        {
+            generator(function()
+            {
+                isWorking = false;
+            })
+        });
     }
 }
