@@ -22,7 +22,7 @@ module.exports = function ()
         else
         {
             var seconds = (new Date() - dt)/1000;
-            if (seconds > 10*60) //10 minutes
+            if (seconds > 5*60) //5 minutes
             {
                 processnow = true;
             }

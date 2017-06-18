@@ -9,14 +9,20 @@ var contestid;
 var usercollection;
 var collection;
 
-function parseUserContest(code, funcproblem, callback)
+function parseUserContest(code, funcproblem, callback, trycount)
 {
+	if (trycount < 0)
+	{
+		callback(Error("Error in parsing problems from contest, Exceeded try counts " + code));
+		return;
+	}
+
 	var url = "https://www.codechef.com/api/contests/" + code;
 	execHttps(url, function(source)
 	{
 		if (source.indexOf('"status":"success"') == -1)
 		{
-			parseUserContest(code, funcproblem, callback);
+			parseUserContest(code, funcproblem, callback, trycount-1);
 			return;
 		}
 
@@ -24,23 +30,26 @@ function parseUserContest(code, funcproblem, callback)
 		
 		async.each(obj.problems, funcproblem, function(err)
 		{
-			if (err)
-				throw err;
-
-			callback();
+			callback(err);
 		});
 
 	}, 3);
 } 
 
-function parseStatusPage(contestid, problemid, pageno, callback)
+function parseStatusPage(contestid, problemid, pageno, callback, trycount)
 {
+	if (trycount < 0)
+	{
+		callback(Error("Error in parsing status page, Exceeded try counts " + contestid + " " + problemid + " " + pageno));
+		return;
+	}
+
 	var url = util.format('https://www.codechef.com/%s/status/%s?page=%s&sort_by=Date%2FTime&sorting_order=asc', contestid, problemid, pageno);;
 	execHttps(url, function(source)
 	{
 		if (source.indexOf("pageinfo") == -1)
 		{
-			parseStatusPage(contestid, problemid, pageno, callback);
+			parseStatusPage(contestid, problemid, pageno, callback, trycount-1);
 			return;
 		}
 
@@ -65,7 +74,7 @@ function parseStatusPage(contestid, problemid, pageno, callback)
 	
 		if (pageno < lastpage)
 		{
-			parseStatusPage(contestid, problemid, pageno+1, callback);
+			parseStatusPage(contestid, problemid, pageno+1, callback, 2);
 		}
 		else
 		{
@@ -116,19 +125,30 @@ module.exports = function(nextcall)
 					{
 						var lastpage = (obj !== null ? obj.pagedone : 0);
 						console.log(problemid, lastpage);
-						parseStatusPage(contestid, problemid, lastpage, callback);
+						parseStatusPage(contestid, problemid, lastpage, callback, 2);
 					});
 				},
-				function()
+				function(err)
 				{
-					console.log("Completed parsing", contestid);
+					if (err)
+					{
+						console.log("Error in parsing", contestid, err);
+					}
+					else
+					{
+						console.log("Completed parsing", contestid);
+					}
+
 					callback();
-				});
+				}, 2);
 			},
 			function (err)
 			{
 				if (err)
+				{
 					console.log("Error", err);
+					throw err;
+				}
 
 				db.close();
 				console.log("Completed ALL");

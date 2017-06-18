@@ -6,7 +6,14 @@ module.exports = function()
     this.execHttps = function (url, func, retry)
     {
         console.log("Parsing", url, retry);
-        https.get(url, function(res)
+        var httpobj = http;
+
+        if (url.startsWith("https://"))
+        {
+            httpobj = https;
+        }
+
+        httpobj.get(url, function(res)
         {
             res.setEncoding("utf8");
             
@@ -15,7 +22,7 @@ module.exports = function()
             {
                 source += data;
             });
-            
+
             res.on("end", function()
             {
                 if (source.indexOf("Server cannot process your request") != -1)
@@ -35,6 +42,9 @@ module.exports = function()
                     func(source);                
                 }
             });
+        }).on("error", function(err)
+        {
+            console.log(err);
         });
     }
 

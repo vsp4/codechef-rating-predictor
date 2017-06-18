@@ -60,7 +60,8 @@ MongoClient.connect(mongourl, function(err, db)
 	app.get('/contest/:contestid/:type', function(req, res)
 	{
 		processor();
-
+		console.log(new Date().toString());			
+		
 		lastupdatecollection.findOne({contest: req.params.contestid}, function (err, dateobj)
 		{
 			if (err)
@@ -79,8 +80,6 @@ MongoClient.connect(mongourl, function(err, db)
 
 					var typename = req.params.type[0].toUpperCase() + req.params.type.slice(1);
 
-					console.log(new Date().toString());
-					
 					res.render('rating', {elapsed: elapsedTime(dateobj.date), contest: req.params.contestid, type: req.params.type, typename: typename, result: result});
 				});
 			}
