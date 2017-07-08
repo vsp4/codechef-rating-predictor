@@ -125,7 +125,7 @@ module.exports = function(nextcall)
 					{
 						var lastpage = (obj !== null ? obj.pagedone : 0);
 						console.log(problemid, lastpage);
-						parseStatusPage(contestid, problemid, lastpage, callback, 2);
+						parseStatusPage(contestid, problemid, lastpage, callback, 9);
 					});
 				},
 				function(err)
@@ -139,8 +139,8 @@ module.exports = function(nextcall)
 						console.log("Completed parsing", contestid);
 					}
 
-					callback();
-				}, 2);
+					callback(err);
+				}, 9);
 			},
 			function (err)
 			{
