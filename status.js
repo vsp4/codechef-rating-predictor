@@ -38,11 +38,13 @@ function parseUserContest(code, funcproblem, callback, trycount)
 
 function parseStatusPage(contestid, problemid, pageno, callback, trycount)
 {
+	/*
 	if (trycount < 0)
 	{
 		callback(Error("Error in parsing status page, Exceeded try counts " + contestid + " " + problemid + " " + pageno));
 		return;
 	}
+	*/
 
 	var url = util.format('https://www.codechef.com/%s/status/%s?page=%s&sort_by=Date%2FTime&sorting_order=asc', contestid, problemid, pageno);;
 	execHttps(url, function(source)
