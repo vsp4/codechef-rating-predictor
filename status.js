@@ -49,15 +49,16 @@ function parseStatusPage(contestid, problemid, pageno, callback, trycount)
 	var url = util.format('https://www.codechef.com/%s/status/%s?page=%s&sort_by=Date%2FTime&sorting_order=asc', contestid, problemid, pageno);;
 	execHttps(url, function(source)
 	{
-		if (source.indexOf("pageinfo") == -1)
-		{
-			parseStatusPage(contestid, problemid, pageno, callback, trycount-1);
-			return;
-		}
-
 		var $ = cheerio.load(source);
 		var lastpage = parseInt($('.pageinfo').text().split(' ')[2]) - 1;		
 		
+		if (source.indexOf("pageinfo") == -1)
+		{
+			//parseStatusPage(contestid, problemid, pageno, callback, trycount-1);
+			//return;
+			lastpage = pageno;
+		}
+
 		$('table[class="dataTable"]>tbody>tr>td>a').each(function(i, data)
 		{
 			var username = $(data).attr('title');
