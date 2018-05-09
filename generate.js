@@ -36,7 +36,7 @@ function getCachedResponseUser(user, func, usecache, trycount)
 			{
 				var doupdate = true;
 
-				if (source.indexOf("date_versus_rating_all") == -1)
+				if (source.indexOf("date_versus_rating") == -1)
 				{
 					if (source.indexOf("Could not find page you requested for") != -1)
 					{
@@ -60,18 +60,18 @@ function getCachedResponseUser(user, func, usecache, trycount)
 						}
 					}
 				}
-					
+				
 				var jsonobj = {};
 				
 				for (var i in parseTypes)
 				{
-					var search = "var " + parseTypes[i] + " = ";
+					var search = "\"" + parseTypes[i] + "\":[";
 					var index = source.indexOf(search);
 					
 					if (index != -1)
 					{
 						index += search.length;
-						var endindex = source.indexOf(";", index);
+						var endindex = source.indexOf("]", index);
 						jsonobj[parseTypes[i]] = JSON.parse(source.substring(index, endindex));
 					}
 					else
@@ -85,7 +85,7 @@ function getCachedResponseUser(user, func, usecache, trycount)
 					cachecollection.update({contest: contestid, user: user}, {contest: contestid, user: user, data: jsonobj}, {upsert: true}, function()
 					{
 						func(jsonobj);
-					})
+					});
 				}
 				else
 				{
