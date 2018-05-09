@@ -63,20 +63,15 @@ function getCachedResponseUser(user, func, usecache, trycount)
 				
 				var jsonobj = {};
 				
-				for (var i in parseTypes)
 				{
-					var search = "\"" + parseTypes[i] + "\":";
+					var search = "\"date_versus_rating\":";
 					var index = source.indexOf(search);
 					
 					if (index != -1)
 					{
 						index += search.length;
-						var endindex = source.indexOf("]", index)+1;
-						jsonobj[parseTypes[i]] = JSON.parse(source.substring(index, endindex));
-					}
-					else
-					{
-						jsonobj[parseTypes[i]] = {};
+						var endindex = source.indexOf("});", index);
+						jsonobj = JSON.parse(source.substring(index, endindex));
 					}
 				}
 
