@@ -1,5 +1,6 @@
 var http = require("http");
 var https = require("https");
+var requrl = require("url");
 
 module.exports = function()
 {
@@ -12,8 +13,16 @@ module.exports = function()
         {
             httpobj = https;
         }
+		
+		const parsedURL = requrl.parse(url);
+		const options = {
+			protocol: parsedURL.protocol,
+			hostname: parsedURL.hostname,
+			path: parsedURL.path,
+			headers: { 'User-Agent': 'Mozilla/5.0' },
+		};
 
-        httpobj.get(url, function(res)
+        httpobj.get(options, function(res)
         {
             res.setEncoding("utf8");
             
