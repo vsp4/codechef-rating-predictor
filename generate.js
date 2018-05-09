@@ -7,7 +7,7 @@ var path = require("path");
 var async = require("async");
 
 var cacheDir = "cache";
-var parseTypes = ["date_versus_rating_all", "date_versus_rating_long", "date_versus_rating_short", "date_versus_rating_ltime"]; //date_versus_rating_all"];//, "date_versus_rating_long", "date_versus_rating_short", "date_versus_rating_ltime"];
+var parseTypes = ["all", "long", "short", "ltime"]; //date_versus_rating_all"];//, "date_versus_rating_long", "date_versus_rating_short", "date_versus_rating_ltime"];
 
 var rankData = {};
 var originalData = {};
@@ -65,13 +65,13 @@ function getCachedResponseUser(user, func, usecache, trycount)
 				
 				for (var i in parseTypes)
 				{
-					var search = "\"" + parseTypes[i] + "\":[";
+					var search = "\"" + parseTypes[i] + "\":";
 					var index = source.indexOf(search);
 					
 					if (index != -1)
 					{
 						index += search.length;
-						var endindex = source.indexOf("]", index);
+						var endindex = source.indexOf("]", index)+1;
 						jsonobj[parseTypes[i]] = JSON.parse(source.substring(index, endindex));
 					}
 					else
@@ -328,10 +328,12 @@ function calculateRating(callback)
 
 			var APerf = Math.log(N/(curr.rank - 1 + add) - 1)/log4;
 			
+			/*
 			if (curr.rank == 1)
 			{
 				add = 1/2;
 			}
+			*/
 
 			var EPerf = 0;
 

@@ -22,7 +22,7 @@ module.exports = function ()
         else
         {
             var seconds = (new Date() - dt)/1000;
-            if (seconds > 5*60) //5 minutes
+            if (seconds > 2*60) //2 minutes
             {
                 processnow = true;
             }
@@ -43,7 +43,7 @@ module.exports = function ()
         var generator = require("./generate.js");
 
         isWorking = true;
-
+		
         status(function()
         {
             generator(function()
