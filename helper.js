@@ -54,6 +54,10 @@ module.exports = function()
         }).on("error", function(err)
         {
             console.log(err);
+            setTimeout(function()
+			{
+				func(source)
+			}, 1000);
         });
     }
 
