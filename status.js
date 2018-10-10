@@ -13,6 +13,7 @@ function parseUserContest(code, funcproblem, callback, trycount)
 {
 	if (trycount < 0)
 	{
+		checklistcollection.findOneAndDelete({'contest': code});
 		callback(Error("Error in parsing problems from contest, Exceeded try counts " + code));
 		return;
 	}
@@ -102,6 +103,7 @@ module.exports = function(nextcall)
 
 		collection = db.collection("status");
 		usercollection = db.collection("user");	
+		checklistcollection = db.collection("checklist");
 
 		usercollection.createIndex({contestid: 1, user: 1}, {unique: true });
 
