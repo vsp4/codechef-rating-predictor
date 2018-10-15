@@ -14,7 +14,6 @@ function parseUserContest(code, funcproblem, callback, trycount)
 	if (trycount < 0)
 	{
 		checklistcollection.findOneAndDelete({'contest': code});
-		callback(Error("Error in parsing problems from contest, Exceeded try counts " + code));
 		return;
 	}
 
