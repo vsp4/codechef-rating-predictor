@@ -54,39 +54,77 @@ MongoClient.connect(mongourl, function(err, db)
 
 	var datacollection = db.collection("data");
 	var lastupdatecollection = db.collection("lastupdate");
+	var checklist = db.collection("checklist");
 
 	var processor = require("./process.js");
+
+	app.get('/',function(req,res) {
+		res.send("Try <a href='/contest/OCT18B/all'>OCT18B</a>");
+	})
+
+	app.get('/add/:contest', function(req,res) {
+		var cid = req.params.contest;
+		checklist.findOneAndReplace(
+			{
+				contest: cid,
+				 parse:['all']
+			},
+			{
+				contest: cid,
+				parse:['all']
+			},
+			{
+				upsert: true
+			},
+			function(err,result) {
+				if(result) {
+					processor(true);
+					res.redirect('/contest/'+cid+'/all');
+				} else {
+					res.render("error", {message: "Couldnot add to checklist"});
+				}
+			})
+	})
 
 	app.get('/contest/:contestid/:type', function(req, res)
 	{
 		processor();
-		console.log(new Date().toString());			
-		
-		lastupdatecollection.findOne({contest: req.params.contestid}, function (err, dateobj)
-		{
-			if (err)
-				throw err;
-
-			if (dateobj)
-			{
-				datacollection.find({contest: req.params.contestid, type: req.params.type}).sort({rank: 1}).toArray((err, result) => {
+		checklist.findOne({contest: req.params.contestid},function(err,obj) {
+			if(err) {
+				return;
+			}
+			if(obj) {
+				lastupdatecollection.findOne({contest: req.params.contestid}, function (err, dateobj)
+				{
 					if (err)
 						throw err;
-					
-					for (var i in result)
+
+					if (dateobj)
 					{
-						result[i].change = result[i].rating - result[i].previous;
+						datacollection.find({contest: req.params.contestid, type: req.params.type}).sort({rank: 1}).toArray((err, result) => {
+							if (err)
+								throw err;
+
+							for (var i in result)
+							{
+								result[i].change = result[i].rating - result[i].previous;
+							}
+
+							var typename = req.params.type[0].toUpperCase() + req.params.type.slice(1);
+
+							res.render('rating', {elapsed: elapsedTime(dateobj.date), contest: req.params.contestid, type: req.params.type, typename: typename, result: result});
+						});
 					}
-
-					var typename = req.params.type[0].toUpperCase() + req.params.type.slice(1);
-
-					res.render('rating', {elapsed: elapsedTime(dateobj.date), contest: req.params.contestid, type: req.params.type, typename: typename, result: result});
+					else
+					{
+						res.status(404);
+						res.render("error", {message: "We are currently calculating ratings for this contest!"});
+					}
 				});
 			}
-			else
-			{
+			else {
 				res.status(404);
-				res.render("error", {message: "No contest predictions found for such contest!"});
+				res.render("error", {message: "No contest predictions found for such contest! Try adding by going to /add/{contest-id}"});
 			}
 		});
 	});

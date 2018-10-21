@@ -3,8 +3,12 @@ var processLogFile = 'process.txt';
 
 var isWorking = false;
 
-module.exports = function ()
+module.exports = function (force)
 {
+    if(force === undefined) {
+        force = false;
+    }
+
     var processnow = false;
 
     if (isWorking)
@@ -22,7 +26,7 @@ module.exports = function ()
         else
         {
             var seconds = (new Date() - dt)/1000;
-            if (seconds > 4*60) //4 minutes
+            if (seconds > 4*60 || force) //4 minutes
             {
                 processnow = true;
             }
