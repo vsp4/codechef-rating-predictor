@@ -7,7 +7,10 @@
 	<body>
 		<div class="container">
             <div style="margin-top: 15px;" class="alert alert-warning">
-                <strong>Error: </strong> <%= message %>
+				<strong>Error: </strong> <%= message %>
+				<% if(link) { %>
+					<div><a href="<%= link %>" class="btn btn-success" role="button">Add Contest</a></div>
+				<% } %>
             </div>
 		</div>
 	<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>	
