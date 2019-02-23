@@ -17,8 +17,8 @@
 			</div>
 
 			<div class="table table-responsive">
-				<table class="table table-bordered">
-					<thead class="thead-inverse">
+				<table class="table table-dark">
+					<thead class="thead-dark">
 						<tr>
 							<th>#</th>
 							<th>Username</th>
@@ -31,9 +31,9 @@
 					<tbody>
 						<% result.forEach((user) => { %>
 						<tr
-						<% if(user.change > 0) { %> bgcolor = "#00A572" <% } %>
-						<% if(user.change < 0) { %> bgcolor = "#CA4333" <% } %>
-						<% if(user.change == 0) { %> bgcolor = "#D4D4D4" <% } %>>
+						<% if(user.change > 0) { %> class = "bg-success" <% } %>
+						<% if(user.change < 0) { %> class = "bg-danger" <% } %>
+						<% if(user.change == 0) { %> class = "bg-primary" <% } %>>
 							<td><%= user.rank %></th>
 							<td><%= user.user %></td>
 							<td><%= user.previous %></td>

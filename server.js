@@ -124,7 +124,10 @@ MongoClient.connect(mongourl, function(err, db)
 			}
 			else {
 				res.status(404);
-				res.render("error", {message: "No contest predictions found for such contest! Try adding by going to /add/{contest-id}"});
+				var link = req.protocol + "://" + req.get('host') + "/add/" + req.params.contestid
+				res.render("error", {
+					message: "No contest predictions found for such contest! Click the button to add contest.",
+					link: link});
 			}
 		});
 	});
