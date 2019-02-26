@@ -8,7 +8,7 @@
 		<div class="container">
             <div style="margin-top: 15px;" class="alert alert-warning">
 				<strong>Error: </strong> <%= message %>
-				<% if(link) { %>
+				<% if(locals.link) { %>
 					<div><a href="<%= link %>" class="btn btn-success" role="button">Add Contest</a></div>
 				<% } %>
             </div>
