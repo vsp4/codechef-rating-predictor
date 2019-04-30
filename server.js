@@ -139,7 +139,7 @@ MongoClient.connect(mongourl, function(err, db)
 		res.render("error", {message: "Invalid link!"});
 	});
 
-	app.listen(8080);
+	app.listen(process.env.PORT || 8080);
 
 	console.log('Listening on http://127.0.0.1:8080');
 	
